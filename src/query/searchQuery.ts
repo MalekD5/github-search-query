@@ -11,7 +11,7 @@ export function findResults(query: string): string[] {
   const type = types[query];
 
   if (!type) {
-    return ["-1"];
+    return [];
   }
 
   return type;
