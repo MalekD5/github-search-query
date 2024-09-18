@@ -6,32 +6,38 @@ type ChangeEvent = React.ChangeEvent<HTMLInputElement>;
 function Text({ text }: { text: string }) {
   const components = [];
 
-  let isSemi = false;
-  for (let i = 0; i < text.length; ) {
-    if (isSemi) {
-      isSemi = false;
-      const indexOfSpace = text.indexOf(" ", i);
-      if (indexOfSpace === -1) {
-        components.push(
-          <span className="text-blue-700">{text.substring(i)}</span>,
-        );
-        break;
+  const chars = text.split("");
+  let lastStr = "";
+  for (let i = 0; i < chars.length; i++) {
+    const char = chars[i];
+    lastStr += char;
+
+    if (char === ":") {
+      components.push(lastStr);
+      lastStr = "";
+      let j;
+      let isWhiteSpace = false;
+      for (j = i + 1; j < chars.length; j++) {
+        const char = chars[j];
+        lastStr += char;
+        if (char === " ") {
+          // create a space that contains a whitespace
+          isWhiteSpace = true;
+          break;
+        }
       }
-      const built = text.substring(i, indexOfSpace);
-      components.push(<span className="text-blue-700">{built} </span>);
-      i = indexOfSpace + 1;
-      continue;
+      components.push(
+        <span className="cursor-text text-blue-700">{lastStr}</span>,
+      );
+      if (isWhiteSpace) {
+        components.push(<span>&nbsp;</span>);
+      }
+      lastStr = "";
+      i = j;
     }
-    const indexOfSemi = text.indexOf(":", i);
-    if (indexOfSemi === -1) {
-      components.push(text.substring(i));
-      break;
-    }
-    const built = text.substring(i, indexOfSemi);
-    components.push(`${built}:`);
-    i = indexOfSemi + 1;
-    isSemi = true;
   }
+  components.push(lastStr);
+
   return (
     <div className="absolute cursor-text text-black select-none inline-flex">
       {components}
@@ -41,8 +47,9 @@ function Text({ text }: { text: string }) {
 
 export default function Search() {
   const [value, setValue] = useState("");
+
   const [filters, setFilters] = useState<{
-    [key: string]: string;
+    [key: string]: string | undefined;
   }>({});
 
   const [results, setResults] = useState<string[]>([]);
@@ -61,7 +68,6 @@ export default function Search() {
 
     const regex = exp.exec(lastSection);
     if (regex) {
-      console.log(regex);
       const [, input, output] = regex;
 
       if (output && output.endsWith(" ")) {
@@ -71,21 +77,21 @@ export default function Search() {
 
       const find = findResults(input);
       setResults(output ? filterResults(output, find) : find);
+
+      console.log(output);
+      if (input) {
+        setFilters({ ...filters, [input]: output });
+      }
     } else {
       setResults([]);
     }
-  };
-
-  const handleOnDelete = (e: ChangeEvent) => {
-    const value = e.target.value;
-    setValue(value);
   };
 
   return (
     <div className="relative">
       <Text text={value} />
       <input
-        className="relative outline outline-black text-transparent bg-transparent"
+        className="relative outline outline-black text-transparent bg-transparent cursor-text caret-black"
         type="text"
         onChange={handleOnChange}
       />
